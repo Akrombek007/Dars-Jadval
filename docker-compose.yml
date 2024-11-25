@@ -1,0 +1,68 @@
+version: '3.8'
+
+networks:
+  app_network:
+
+services:
+  #  telegram_bot:
+  #    image: telegram_bot
+  #    restart: always
+  #    depends_on:
+  #      - postgres
+  #    environment:
+  #      IP: localhost
+  #      ADMIN: 550676068
+  #      ADMINS: 765135326
+  #      ADMIN1: 1709066039
+  #      BOT_TOKEN: 1808395536:AAE8_x1cSHCXTvfQPmlIf3Q1GzRKjm4TTqI
+  #      DATABASE_URL: postgresql+psycopg2://MMTM_user:MMTM_password@postgres:5432/MMTM_kontrakt
+  #    networks:
+  #      - app_network
+  #    deploy:
+  #      resources:
+  #        limits:
+  #          cpus: "1"
+  #          memory: 500M
+  #        reservations:
+  #          cpus: "0.5"
+  #          memory: 300M
+  #    logging:
+  #      driver: "json-file"
+  #      options:
+  #        max-size: "10m"
+  #        max-file: "3"
+
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: DJ_user
+      POSTGRES_PASSWORD: DJ_password
+      POSTGRES_DB: DJ_Database
+    ports:
+      - "5439:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app_network
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "1"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./pgdata
+      o: bind
