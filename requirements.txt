@@ -4,5 +4,15 @@ PySide6==6.8.0.2
 python-dotenv==0.21.1
 psycopg2==2.9.10
 PyQt5==5.15.11
-pytz==2024.2
-sqlmodel==0.0.22
+pytz~=2024.1
+sqlmodel~=0.0.16
+uvicorn==0.23.2
+certifi~=2024.2.2
+pip~=10.0.1
+lxml~=5.1.0
+setuptools~=39.0.1
+SQLAlchemy~=2.0.28
+fastapi~=0.103.2
+tenacity~=8.2.3
+wheel~=0.41.2
+pydantic~=2.5.3

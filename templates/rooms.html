@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xonalar boshqaruvi</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <header class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Xonalar boshqaruvi</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="/" class="hover:underline">Asosiy sahifa</a></li>
+                    <li><a href="/rooms" class="hover:underline">Xonalar</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto mt-8 p-4">
+        <!-- Yangi xona qo'shish formasi -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Yangi xona qo'shish</h2>
+            <form id="add-room-form" class="space-y-4">
+                <div>
+                    <label for="room-name" class="block text-sm font-medium text-gray-700">Xona nomi:</label>
+                    <input type="text" id="room-name" name="name" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                </div>
+                <div>
+                    <label for="room-type" class="block text-sm font-medium text-gray-700">Xona turi:</label>
+                    <select id="room-type" name="roomstype" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <option value="Maruza">Maruza Xona</option>
+                        <option value="Seminar">Seminar Xona</option>
+                        <option value="Amaliyot">Amaliyot Xona</option>
+                    </select>
+                </div>
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Qo'shish
+                </button>
+            </form>
+        </div>
+
+        <!-- Xonalar ro'yxati -->
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <h2 class="text-2xl font-semibold p-6 bg-gray-50 border-b">Mavjud xonalar</h2>
+            <div class="overflow-x-auto">
+                <table id="rooms-table" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Xona nomi</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Xona turi</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Xonalar JavaScript orqali qo'shiladi -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', path='/rooms.js') }}"></script>
+</body>
+</html>

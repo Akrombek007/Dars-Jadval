@@ -1,6 +1,6 @@
 from logging import INFO, getLogger, Formatter, StreamHandler
 from logging.handlers import RotatingFileHandler
-from DatabaseService import ENV
+# from DatabaseService import ENV
 from os.path import join
 
 
@@ -37,7 +37,7 @@ class LoggerService:
             self.logger.addHandler(handler)
 
         # Konsolga chiqish loglari (faqat ishlab chiqish muhiti uchun)
-        if ENV == "development":  # Muhitni o‘zgartirish uchun `ENV` o'zgaruvchisini qo'llash
+        if 'ENV' == "development":  # Muhitni o‘zgartirish uchun `ENV` o'zgaruvchisini qo'llash
             console_handler = StreamHandler()
             console_handler.setLevel(log_level)
             console_handler.setFormatter(formatter)

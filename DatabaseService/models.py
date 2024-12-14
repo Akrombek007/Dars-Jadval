@@ -1,7 +1,8 @@
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 from pytz import timezone
+from json import dumps
 
 
 class BaseModel(SQLModel):
@@ -13,6 +14,30 @@ class BaseModel(SQLModel):
 
     def to_dict(self) -> dict:
         return {col.name: getattr(self, col.name) for col in self.__table__.columns}
+
+    def to_json(self) -> str:
+        """Ob'ektni JSON formatiga o'tkazadi."""
+        return dumps(self.to_dict(), ensure_ascii=False, indent=4)
+
+    def update_from_dict(self, data: dict) -> None:
+        """
+        Ob'ekt maydonlarini berilgan lug'at asosida yangilaydi.
+        Faqat mavjud maydonlar yangilanadi.
+        """
+        for key, value in data.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+    def __repr__(self) -> str:
+        """Ob'ektni string formatida taqdim etadi."""
+        return f"<{self.__class__.__name__}(id={self.id}, created_date={self.created_date}, created_time={self.created_time})>"
+
+    @classmethod
+    def find_by_id(cls, session, obj_id: int) -> Union["BaseModel", None]:
+        """
+        Berilgan `id` bo‘yicha obyektni qaytaradi.
+        """
+        return session.query(cls).filter(cls.id == obj_id, cls.is_active == True).first()
 
 
 # Kurs modeli
@@ -35,9 +60,35 @@ class Group(BaseModel, table=True):
 class Teacher(BaseModel, table=True):
     __tablename__ = 'teachers'
     name: str = Field(..., description="O'qituvchi ismi")
-    sciencename: str = Field(..., description="O'qituvchi fani nomi")
-    classtime: str = Field(..., description="O'qituvchi vaqti")
+    sciencename: str = Field(None, description="O'qituvchi fani nomi")
+    classtime: str = Field(None, description="O'qituvchi vaqti")
 
+
+class TeacherInfo(BaseModel, table=True):
+    __tablename__ = 'teacher_infos'
+    teacher_id: int = Field(foreign_key="teachers.id", description="O'qituvchi identifikatori")
+    name: str = Field(..., description="O'qituvchi ismi")
+    subject_name: str = Field(None, description="Fan nomi")
+    subject_number: str = Field(None, description="Fanlar soni")
+
+
+class Subject(BaseModel, table=True):
+    """
+    Fanlar modeli (masalan: matematika, fizika).
+    """
+    __tablename__ = "subjects"
+    name: str = Field(..., description="Fan nomi")
+    subject_type: str = Field(..., description="Fan turi")
+    course_id: Optional[str] = Field(None, description="Fan tavsifi")
+    course_name: Optional[str] = Field(None, description="Kurs nomi")
+
+
+class LessonType(BaseModel, table=True):
+    """
+    Dars turi modeli (masalan: ma'ruza, amaliyot).
+    """
+    __tablename__ = "lesson_types"
+    name: str = Field(..., description="Dars turi nomi")  # Masalan, Ma'ruza yoki Amaliyot
 
 # Xona modeli
 class Room(BaseModel, table=True):
@@ -58,37 +109,37 @@ class Week(BaseModel, table=True):
     day_number: int = Field(..., description="Xafta kuni raqami")
 
 
-class ClassSchedule(BaseModel, table=True):
-    __tablename__ = 'class_schedules'
-    course_id: int = Field(foreign_key="courses.id", description="Kurs identifikatori")
-    course: "Course" = Relationship(back_populates="class_schedules")
-    group_id: int = Field(foreign_key="groups.id", description="Guruh identifikatori")
-    group: "Group" = Relationship(back_populates="class_schedules")
-    teacher_id: int = Field(foreign_key="teachers.id", description="O'qituvchi identifikatori")
-    teacher: "Teacher" = Relationship()
-    room_id: int = Field(foreign_key="rooms.id", description="Xona identifikatori")
-    room: "Room" = Relationship()
-    week_id: int = Field(foreign_key="weeks.id", description="Hafta kunining identifikatori")
-    week: "Week" = Relationship()
-    para_id: int = Field(foreign_key="timetables.id", description="Dars vaqtining identifikatori")
-    para: "Timetable" = Relationship()
-
-    @staticmethod
-    def is_teacher_conflict(session, teacher_id: int, week_id: int, para_id: int) -> bool:
-        """O'qituvchi uchun konfliktni tekshirish."""
-        conflict = session.query(ClassSchedule).filter(
-            ClassSchedule.teacher_id == teacher_id,
-            ClassSchedule.week_id == week_id,
-            ClassSchedule.para_id == para_id
-        ).first()
-        return conflict is not None
-
-    @staticmethod
-    def is_room_conflict(session, room_id: int, week_id: int, para_id: int) -> bool:
-        """Xona uchun konfliktni tekshirish."""
-        conflict = session.query(ClassSchedule).filter(
-            ClassSchedule.room_id == room_id,
-            ClassSchedule.week_id == week_id,
-            ClassSchedule.para_id == para_id
-        ).first()
-        return conflict is not None
+# class ClassSchedule(BaseModel, table=True):
+#     __tablename__ = 'class_schedules'
+#     course_id: int = Field(foreign_key="courses.id", description="Kurs identifikatori")
+#     course: "Course" = Relationship(back_populates="class_schedules")
+#     group_id: int = Field(foreign_key="groups.id", description="Guruh identifikatori")
+#     group: "Group" = Relationship(back_populates="class_schedules")
+#     teacher_id: int = Field(foreign_key="teachers.id", description="O'qituvchi identifikatori")
+#     teacher: "Teacher" = Relationship()
+#     room_id: int = Field(foreign_key="rooms.id", description="Xona identifikatori")
+#     room: "Room" = Relationship()
+#     week_id: int = Field(foreign_key="weeks.id", description="Hafta kunining identifikatori")
+#     week: "Week" = Relationship()
+#     para_id: int = Field(foreign_key="timetables.id", description="Dars vaqtining identifikatori")
+#     para: "Timetable" = Relationship()
+#
+#     @staticmethod
+#     def is_teacher_conflict(session, teacher_id: int, week_id: int, para_id: int) -> bool:
+#         """O'qituvchi uchun konfliktni tekshirish."""
+#         conflict = session.query(ClassSchedule).filter(
+#             ClassSchedule.teacher_id == teacher_id,
+#             ClassSchedule.week_id == week_id,
+#             ClassSchedule.para_id == para_id
+#         ).first()
+#         return conflict is not None
+#
+#     @staticmethod
+#     def is_room_conflict(session, room_id: int, week_id: int, para_id: int) -> bool:
+#         """Xona uchun konfliktni tekshirish."""
+#         conflict = session.query(ClassSchedule).filter(
+#             ClassSchedule.room_id == room_id,
+#             ClassSchedule.week_id == week_id,
+#             ClassSchedule.para_id == para_id
+#         ).first()
+#         return conflict is not None
