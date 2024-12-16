@@ -36,4 +36,7 @@ async def read_subjects_page(request: Request):
 async def read_rooms_page(request: Request):
     return templates.TemplateResponse("rooms.html", {"request": request})
 
+@app.get("/timetable")
+async def read_timetable_page(request: Request):
+    return templates.TemplateResponse("schedule.html", {"request": request})
 # Add similar CRUD operations for Group, Teacher, Room, ClassSchedule, Week, and Timetable

@@ -102,3 +102,46 @@ form button:hover {
     animation: fadeIn 0.5s ease-in-out;
 }
 
+
+    .table-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .vertical-table {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ddd;
+        width: 90%;
+        margin: auto;
+    }
+
+    .vertical-row {
+        display: flex;
+        flex-direction: row;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .vertical-row div {
+        flex: 1;
+        padding: 10px;
+        border-right: 1px solid #ddd;
+        text-align: center;
+    }
+
+    .vertical-row div:last-child {
+        border-right: none;
+    }
+
+    .header {
+        background-color: #4A90E2;
+        color: white;
+        font-weight: bold;
+    }
+
+    .day-header {
+        background-color: #f7fafc;
+        font-weight: bold;
+    }
+
