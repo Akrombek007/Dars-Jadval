@@ -55,3 +55,4 @@ async def get_schedule_table(course_id: int, db: DatabaseCore = Depends(get_db_c
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    

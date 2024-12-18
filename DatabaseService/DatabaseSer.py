@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity import retry, wait_exponential, stop_after_attempt
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import sessionmaker, selectinload
 from typing import Optional, List, Type, Dict, Any
 from sqlmodel import SQLModel, select, and_
 from contextlib import asynccontextmanager
 from LoggerService import LoggerService
-from sqlalchemy.orm import sessionmaker
 from .config import DATABASE_URL
 from time import time
 
@@ -133,6 +133,49 @@ class DatabaseService1:
                 records = result.scalars().all()
                 if self.logging:
                     self.logging.info(f"Retrieved {len(records)} records from {model.__name__}")
+                return records
+            except Exception as e:
+                if self.logging:
+                    self.logging.error(f"Error retrieving data from {model.__name__}: {e}", exc_info=True)
+                raise
+
+    async def get_table(
+            self,
+            model: Type[SQLModel],
+            filters: Optional[Dict[str, Any]] = None,
+            limit: Optional[int] = None,
+            relationships: Optional[List[str]] = None  # Eager load uchun qo'shimcha parametr
+    ) -> List[SQLModel]:
+        """
+        Jadvaldan yozuvlarni olish.
+        :param model: SQLModel jadvali turi.
+        :param filters: Filtlash shartlari (masalan, {"id": 1}).
+        :param limit: Qaytariladigan yozuvlar soni.
+        :param relationships: Eager loading uchun Relationship maydonlari.
+        :return: Model yozuvlari.
+        """
+        async with self.session_scope() as session:
+            try:
+                # Asosiy so'rov
+                query = select(model)
+
+                # Eager load qilingan munosabatlar
+                if relationships:
+                    for relation in relationships:
+                        query = query.options(selectinload(getattr(model, relation)))
+
+                # Filtrlash shartlari
+                if filters:
+                    conditions = [getattr(model, key) == value for key, value in filters.items() if hasattr(model, key)]
+                    if conditions:
+                        query = query.where(and_(*conditions))
+
+                # Limit
+                if limit:
+                    query = query.limit(limit)
+
+                result = await session.execute(query)
+                records = result.scalars().all()
                 return records
             except Exception as e:
                 if self.logging:

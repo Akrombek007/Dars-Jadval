@@ -94,54 +94,55 @@ const ScheduleManager = {
 
     createTableHeader(groups) {
         const headerRow = document.querySelector('thead tr');
-        headerRow.innerHTML = `
-            <th class="py-5 px-6 text-sm font-semibold border-r border-white border-opacity-30">Hafta kuni</th>
-            <th class="py-5 px-2 text-sm font-semibold border-r border-white border-opacity-30">№</th>
-        `;
+        headerRow.innerHTML = '<th>Hafta kuni</th><th>№</th>'; // Asosiy ustunlar
 
         groups.forEach(group => {
             const th = document.createElement('th');
-            th.className = 'py-5 px-4 text-sm font-semibold border-r border-white border-opacity-30 last:border-r-0';
-
-            const container = document.createElement('div');
-            container.className = 'inline-block text-center min-w-[100px] bg-white bg-opacity-20 rounded-lg p-2';
-            container.textContent = group.name;
-
-            th.appendChild(container);
+            th.textContent = group.name; // Guruh nomini ko‘rsatish
+            th.className = 'py-2 px-4 text-xs border';
             headerRow.appendChild(th);
         });
     },
 
     fillTableBody(scheduleData, groups, daysOfWeek) {
-        this.scheduleTableBody.innerHTML = '';
-
+        this.scheduleTableBody.innerHTML = ''; // Yangi jadvalni tozalash
         const dayColors = [
-            'from-blue-300 to-indigo-400',
-            'from-green-300 to-teal-400',
-            'from-yellow-300 to-orange-400',
-            'from-red-300 to-pink-400',
-            'from-purple-300 to-indigo-400',
-            'from-pink-300 to-red-400'
+            'bg-blue-100',   // Dushanba
+            'bg-yellow-100', // Seshanba
+            'bg-green-100',  // Chorshanba
+            'bg-blue-100',   // Payshanba
+            'bg-red-200', // Juma
+            'bg-blue-100'    // Shanba
+        ];
+
+        // Dars vaqtlarini ajratish uchun ranglar
+        const timeSlotColors = [
+            'bg-blue-00',   // 1-dars
+            'bg-blue-200',   // 2-dars
+            'bg-blue-300',   // 3-dars
+            'bg-blue-400'    // 4-dars
         ];
 
         daysOfWeek.forEach((day, dayIndex) => {
             for (let timeSlot = 1; timeSlot <= 4; timeSlot++) {
                 const row = document.createElement('tr');
-                row.className = 'transition-colors hover:bg-white hover:bg-opacity-10';
 
+                // Kunni faqat bir marta qo‘shish
                 if (timeSlot === 1) {
                     const dayCell = document.createElement('td');
                     dayCell.textContent = day;
                     dayCell.rowSpan = 4;
-                    dayCell.className = `py-4 px-6 border-r border-white border-opacity-30 font-bold text-lg bg-gradient-to-r ${dayColors[dayIndex]}`;
+                    dayCell.className = `py-3 px-6 border font-bold ${dayColors[dayIndex]}`;
                     row.appendChild(dayCell);
                 }
 
+                // Vaqt oralig‘i uchun yacheykani qo‘shish
                 const timeSlotCell = document.createElement('td');
-                timeSlotCell.textContent = `${timeSlot}`;
-                timeSlotCell.className = 'py-4 px-4 border-r border-white border-opacity-30 font-medium';
+                timeSlotCell.textContent = `${timeSlot}-dars`;
+                timeSlotCell.className = `py-3 px-6 border font-semibold text-gray-700 ${timeSlotColors[timeSlot - 1]}`;
                 row.appendChild(timeSlotCell);
 
+                // Guruhlar uchun yacheykalarni yaratish
                 groups.forEach(group => {
                     const cell = document.createElement('td');
                     const cellData = scheduleData.find(item =>
@@ -152,30 +153,19 @@ const ScheduleManager = {
 
                     if (cellData) {
                         cell.innerHTML = `
-                            <div class="schedule-cell p-3 rounded-lg bg-white bg-opacity-40 shadow-lg">
-                                <div class="font-medium text-sm mb-1">
-                                    <span class="text-indigo-700 font-semibold">O'qituvchi:</span> ${cellData.teacher.name}
-                                </div>
-                                <div class="font-medium text-sm mb-1">
-                                    <span class="text-indigo-700 font-semibold">Fan:</span> ${cellData.subject.name}
-                                </div>
-                                <div class="font-medium text-sm">
-                                    <span class="text-indigo-700 font-semibold">Xona:</span> ${cellData.room.name}
-                                </div>
-                            </div>
+                            <div><strong>Xona:</strong> ${cellData.room.name}</div>
+                            <div><strong>O‘qituvchi:</strong> ${cellData.teacher.name}</div>
+                            <div><strong>Fan:</strong> ${cellData.subject.name}</div>
                         `;
+                        cell.classList.add('bg-green-100');
                     } else {
-                        cell.innerHTML = `
-                            <div class="schedule-cell p-3 rounded-lg bg-white bg-opacity-20 hover:bg-opacity-40 transition-colors cursor-pointer">
-                                <div class="text-sm italic text-indigo-700">Bo'sh</div>
-                            </div>
-                        `;
+                        cell.innerHTML = `<div>Bo'sh</div>`;
                         cell.addEventListener('click', () =>
                             this.openModal(cell, day, timeSlot, group.id)
                         );
                     }
 
-                    cell.className = 'border-r border-white border-opacity-30 last:border-r-0 p-2';
+                    cell.className = 'py-3 px-6 border cursor-pointer';
                     row.appendChild(cell);
                 });
 

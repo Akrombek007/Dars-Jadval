@@ -114,7 +114,7 @@ class Schedule(BaseModel, table=True):
     room_id: int = Field(foreign_key="rooms.id", description="Xona identifikatori")
     room: Room = Relationship(back_populates="schedules")
 
-    day: int = Field(..., description="Xafta kuni (Dushanba, Seshanba, ...)")
+    day: str = Field(..., description="Xafta kuni (Dushanba, Seshanba, ...)")
     time_slot: int = Field(..., description="Dars vaqti (1, 2, 3, 4)")
 
 

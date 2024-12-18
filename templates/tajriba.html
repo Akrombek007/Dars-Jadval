@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dars Jadvali - San'at asari</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+        }
+
+        .schedule-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .schedule-header {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .schedule-cell {
+            transition: all 0.3s ease;
+        }
+
+        .schedule-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen py-10 px-0">
+<div class="w-full">
+    <header class="text-center mb-12">
+        <h1 class="text-5xl font-extrabold text-white mb-4 shadow-text">Dars Jadvali San'ati</h1>
+        <p class="text-xl text-white opacity-80">Bilim olish jarayonining go'zalligi</p>
+    </header>
+
+    <div class="schedule-container p-6 mb-8">
+        <div class="mb-8">
+            <label for="courseSelect" class="block text-2xl font-semibold text-white mb-4">
+                🎨 Kursni tanlang:
+            </label>
+            <select id="courseSelect"
+                    class="w-full md:w-2/3 p-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent">
+                <option value="" disabled selected>Kursni tanlang...</option>
+            </select>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                <tr class="schedule-header text-white">
+                    <!-- Header will be populated by JavaScript -->
+                </tr>
+                </thead>
+                <tbody id="scheduleTableBody" class="text-white">
+                <!-- Table body will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal structure remains the same -->
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 class="text-2xl font-bold text-blue-700 mb-4 text-center">Dars Ma'lumotlarini Kiriting</h2>
+        <form id="scheduleForm" class="space-y-4">
+            <input type="hidden" id="selectedCell"> <!-- Tanlangan yacheyka -->
+            <div>
+                <label for="room" class="block font-semibold text-gray-700">Xona:</label>
+                <select id="room" class="w-full border-2 border-blue-300 rounded py-2 px-3">
+                    <option value="">Xona tanlang...</option>
+                </select>
+            </div>
+            <div>
+                <label for="teacher" class="block font-semibold text-gray-700">O'qituvchi:</label>
+                <select id="teacher" class="w-full border-2 border-blue-300 rounded py-2 px-3">
+                    <option value="">O'qituvchi tanlang...</option>
+                </select>
+            </div>
+            <div>
+                <label for="subject" class="block font-semibold text-gray-700">Fan:</label>
+                <select id="subject" class="w-full border-2 border-blue-300 rounded py-2 px-3">
+                    <option value="">Fan tanlang...</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" id="saveData"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded">Saqlash
+                </button>
+                <button type="button" id="closeModal"
+                        class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-5 rounded">Yopish
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', path='/schedule.js') }}"></script>
+</body>
+</html>
+
