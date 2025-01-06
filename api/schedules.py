@@ -1,8 +1,6 @@
-from sqlalchemy.orm import relationship
-
 from DatabaseService import Course, DatabaseCore, get_db_core, Subject, Group, Schedule
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List
+from typing import List, Dict, Any
 
 router = APIRouter(
     prefix="/api",
@@ -55,3 +53,62 @@ async def get_schedule_table(course_id: int, db: DatabaseCore = Depends(get_db_c
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/schedule/{schedule_id}")
+async def update_schedule(
+    schedule_id: int,
+    updated_data: Dict[str, Any],
+    db: DatabaseCore = Depends(get_db_core)
+):
+    """
+    Mavjud dars jadvalini yangilash.
+
+    Parameters:
+    - schedule_id: Yangilanishi kerak bo'lgan jadval identifikatori
+    - updated_data: Yangi ma'lumotlar lug'ati
+    - db: Ma'lumotlar bazasi xizmati
+
+    Returns:
+    - Yangilangan jadval identifikatori
+    """
+    try:
+        # Ma'lumotlar bazasidan jadvalni olish
+        existing_schedules = await db.get(Schedule, filters={"id": schedule_id})
+
+        if not existing_schedules:
+            raise HTTPException(
+                status_code=404,
+                detail=f"ID {schedule_id} ga ega jadval topilmadi"
+            )
+
+        schedule_instance = existing_schedules[0]  # Birinchi natija
+
+        # Yangi ma'lumotlarni filtrlash
+        allowed_fields = {"room_id", "teacher_id", "subject_id"}
+        update_data = {key: value for key, value in updated_data.items() if key in allowed_fields}
+
+        if not update_data:
+            raise HTTPException(
+                status_code=400,
+                detail="Yangilash uchun hech qanday ma'lumot berilmagan"
+            )
+
+        # Jadvalni yangilash
+        schedule_instance.update_from_dict(update_data)
+
+        # DatabaseService1.update funksiyasidan foydalanib yangilash
+        updated_id = await db.update(schedule_instance)
+
+        return {
+            "message": "Dars jadvali muvaffaqiyatli yangilandi",
+            "updated_id": updated_id
+        }
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Jadval yangilashda xatolik: {str(e)}"
+        )

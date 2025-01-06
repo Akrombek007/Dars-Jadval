@@ -97,7 +97,7 @@ class DatabaseService1:
         """Mavjud yozuvni yangilaydi."""
         async with self.session_scope() as session:
             try:
-                await session.merge(instance)
+                instance = await session.merge(instance)
                 await session.commit()
                 await session.refresh(instance)
                 if self.logging:
