@@ -21,12 +21,7 @@ const ScheduleManager = {
     },
 
     async loadInitialData() {
-        await Promise.all([
-            this.loadCourses(),
-            this.loadRooms(),
-            this.loadTeachers(),
-            this.loadSubjects()
-        ]);
+        await this.loadCourses();
     },
 
     async loadCourses() {
@@ -35,22 +30,51 @@ const ScheduleManager = {
         this.populateDropdown(this.courseSelect, courses, 'Kursni tanlang...');
     },
 
-    async loadRooms() {
-        const response = await fetch('/api/rooms/');
-        const rooms = await response.json();
-        this.populateDropdown(this.roomSelect, rooms, 'Xona tanlang...');
+    async loadAvailableTeachers(dayNumber, timeSlot) {
+        try {
+            const response = await fetch(`/api/available-teachers/?day=${dayNumber}&time_slot=${timeSlot}`);
+            const teachers = await response.json();
+
+            if (Array.isArray(teachers)) {
+                this.populateDropdown(this.teacherSelect, teachers, 'O\'qituvchi tanlang...');
+            } else {
+                this.teacherSelect.innerHTML = '<option value="">Bo\'sh o\'qituvchilar yo\'q</option>';
+            }
+        } catch (error) {
+            console.error('Error loading available teachers:', error);
+            alert('O\'qituvchilarni yuklashda xatolik');
+        }
     },
 
-    async loadTeachers() {
-        const response = await fetch('/api/teachers/');
-        const teachers = await response.json();
-        this.populateDropdown(this.teacherSelect, teachers, 'Oqituvchi tanlang...');
+    async loadAvailableRooms(dayNumber, timeSlot) {
+        try {
+            const response = await fetch(`/api/available-rooms/?day=${dayNumber}&time_slot=${timeSlot}`);
+            const rooms = await response.json();
+
+            if (Array.isArray(rooms)) {
+                this.populateDropdown(this.roomSelect, rooms, 'Xona tanlang...');
+            } else {
+                this.roomSelect.innerHTML = '<option value="">Bo\'sh xonalar yo\'q</option>';
+            }
+        } catch (error) {
+            console.error('Error loading available rooms:', error);
+            alert('Xonalarni yuklashda xatolik');
+        }
     },
 
-    async loadSubjects() {
-        const response = await fetch('/api/subjects/');
-        const subjects = await response.json();
-        this.populateDropdown(this.subjectSelect, subjects, 'Fan tanlang...');
+    async loadSubjects(courseId) {
+        try {
+            const response = await fetch(`/api/schedule/subjects/${courseId}`);
+            const subjects = await response.json();
+            if (Array.isArray(subjects)) {
+                this.populateDropdown(this.subjectSelect, subjects, 'Fan tanlang...');
+            } else {
+                this.subjectSelect.innerHTML = '<option value="">Fanlar topilmadi</option>';
+            }
+        } catch (error) {
+            console.error('Error loading subjects:', error);
+            alert('Fanlarni yuklashda xatolik');
+        }
     },
 
     populateDropdown(selectElement, items, placeholder) {
@@ -181,21 +205,42 @@ const ScheduleManager = {
         `;
     },
 
-    openModal(cell, day, timeSlot, groupId, cellData) {
+    async openModal(cell, day, timeSlot, groupId, cellData) {
         this.selectedCell.value = `${day}-${timeSlot}-${groupId}`;
+
+        // Convert day name to number for API calls
+        const daysOfWeekNumber = {
+            'Dushanba': 1,
+            'Seshanba': 2,
+            'Chorshanba': 3,
+            'Payshanba': 4,
+            'Juma': 5,
+            'Shanba': 6
+        };
+        const dayNumber = daysOfWeekNumber[day];
+        const courseId = this.courseSelect.value;
+
+        // Load available data for this time slot
+        await Promise.all([
+            this.loadAvailableTeachers(dayNumber, timeSlot),
+            this.loadAvailableRooms(dayNumber, timeSlot),
+            this.loadSubjects(courseId)
+        ]);
+
         if (cellData) {
             this.roomSelect.value = cellData.room.id;
             this.teacherSelect.value = cellData.teacher.id;
             this.subjectSelect.value = cellData.subject.id;
-            this.saveDataButton.classList.add('hidden');
-            this.updateDataButton.classList.remove('hidden');
+            this.saveDataButton.style.display = 'none';
+            this.updateDataButton.style.display = 'block';
         } else {
             this.roomSelect.value = '';
             this.teacherSelect.value = '';
             this.subjectSelect.value = '';
-            this.saveDataButton.classList.remove('hidden');
-            this.updateDataButton.classList.add('hidden');
+            this.saveDataButton.style.display = 'block';
+            this.updateDataButton.style.display = 'none';
         }
+
         this.modal.classList.remove('hidden');
     },
 

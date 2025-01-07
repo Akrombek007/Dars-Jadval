@@ -139,6 +139,47 @@ class DatabaseService1:
                     self.logging.error(f"Error retrieving data from {model.__name__}: {e}", exc_info=True)
                 raise
 
+    async def get_for_schedule(self, model: Type[SQLModel], filters: Optional[Dict[str, Any]] = None, limit: Optional[int] = None) -> \
+    List[SQLModel]:
+        """
+        Jadvaldan yozuvlarni olish.
+        :param model: SQLModel jadvali turi.
+        :param filters: Filtlash shartlari (masalan, {"id": 1} yoki {"id": {"not_in": [1, 2]}}).
+        :param limit: Qaytariladigan yozuvlar soni.
+        :return: Model yozuvlari.
+        """
+        async with self.session_scope() as session:
+            try:
+                query = select(model)
+
+                if filters:
+                    conditions = []
+                    for key, value in filters.items():
+                        column = getattr(model, key)
+                        if isinstance(value, dict):
+                            # Murakkab shartlarni ishlov berish
+                            if "not_in" in value:
+                                conditions.append(column.not_in(value["not_in"]))
+                            else:
+                                raise ValueError(f"Unsupported filter operation: {value}")
+                        else:
+                            conditions.append(column == value)
+
+                    query = query.where(and_(*conditions))
+
+                if limit:
+                    query = query.limit(limit)
+
+                result = await session.execute(query)
+                records = result.scalars().all()
+                if self.logging:
+                    self.logging.info(f"Retrieved {len(records)} records from {model.__name__}")
+                return records
+            except Exception as e:
+                if self.logging:
+                    self.logging.error(f"Error retrieving data from {model.__name__}: {e}", exc_info=True)
+                raise
+
     async def get_table(
             self,
             model: Type[SQLModel],
