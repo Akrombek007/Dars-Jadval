@@ -7,8 +7,11 @@ const ScheduleManager = {
         this.roomSelect = document.getElementById('room');
         this.teacherSelect = document.getElementById('teacher');
         this.subjectSelect = document.getElementById('subject');
+        this.additionalGroupsSelect = document.getElementById('additionalGroups');
         this.saveDataButton = document.getElementById('saveData');
         this.updateDataButton = document.getElementById('updateData');
+        this.toggleGroupsButton = document.getElementById('toggleGroups');
+        this.groupSelectionContent = document.getElementById('groupSelectionContent');
         this.bindEvents();
         this.loadInitialData();
     },
@@ -18,6 +21,13 @@ const ScheduleManager = {
         this.saveDataButton.addEventListener('click', this.saveData.bind(this));
         this.updateDataButton.addEventListener('click', this.updateData.bind(this));
         document.getElementById('closeModal').addEventListener('click', this.closeModal.bind(this));
+        this.toggleGroupsButton.addEventListener('click', this.toggleGroupSelection.bind(this));
+    },
+
+    toggleGroupSelection() {
+        this.groupSelectionContent.classList.toggle('show');
+        const isExpanded = this.groupSelectionContent.classList.contains('show');
+        this.toggleGroupsButton.setAttribute('aria-expanded', isExpanded);
     },
 
     async loadInitialData() {
@@ -28,6 +38,33 @@ const ScheduleManager = {
         const response = await fetch('/api/courses/for/groups');
         const courses = await response.json();
         this.populateDropdown(this.courseSelect, courses, 'Kursni tanlang...');
+    },
+
+    async loadGroups(courseId, excludeGroupId = null) {
+        try {
+            const response = await fetch(`/api/schedule/${courseId}`);
+            const groups = await response.json();
+
+            // Filter out the current group if provided
+            const availableGroups = excludeGroupId
+                ? groups.filter(group => group.id !== parseInt(excludeGroupId))
+                : groups;
+
+            // Populate the additional groups dropdown
+            this.additionalGroupsSelect.innerHTML = '';
+            availableGroups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.id;
+                option.textContent = group.name;
+                this.additionalGroupsSelect.appendChild(option);
+            });
+
+            return groups;
+        } catch (error) {
+            console.error('Error loading groups:', error);
+            this.showToast('Guruhlarni yuklashda xatolik', 'error');
+            return [];
+        }
     },
 
     async loadAvailableTeachers(dayNumber, timeSlot) {
@@ -42,7 +79,7 @@ const ScheduleManager = {
             }
         } catch (error) {
             console.error('Error loading available teachers:', error);
-            alert('O\'qituvchilarni yuklashda xatolik');
+            this.showToast('O\'qituvchilarni yuklashda xatolik', 'error');
         }
     },
 
@@ -58,7 +95,7 @@ const ScheduleManager = {
             }
         } catch (error) {
             console.error('Error loading available rooms:', error);
-            alert('Xonalarni yuklashda xatolik');
+            this.showToast('Xonalarni yuklashda xatolik', 'error');
         }
     },
 
@@ -73,7 +110,7 @@ const ScheduleManager = {
             }
         } catch (error) {
             console.error('Error loading subjects:', error);
-            alert('Fanlarni yuklashda xatolik');
+            this.showToast('Fanlarni yuklashda xatolik', 'error');
         }
     },
 
@@ -101,12 +138,12 @@ const ScheduleManager = {
                 if (groups.length > 0) {
                     this.renderSchedule(scheduleData, groups);
                 } else {
-                    alert("Guruhlar topilmadi!");
+                    this.showToast("Guruhlar topilmadi!", "error");
                     this.scheduleTableBody.innerHTML = "";
                 }
             } catch (error) {
                 console.error("Ma'lumotlarni olishda xatolik:", error);
-                alert("Ma'lumotlarni olishda xatolik yuz berdi.");
+                this.showToast("Ma'lumotlarni olishda xatolik yuz berdi.", "error");
             }
         }
     },
@@ -206,9 +243,47 @@ const ScheduleManager = {
     },
 
     async openModal(cell, day, timeSlot, groupId, cellData) {
+        this.setLoading(true);
         this.selectedCell.value = `${day}-${timeSlot}-${groupId}`;
 
-        // Convert day name to number for API calls
+        // Initialize select2 for all dropdowns
+        $(this.roomSelect).select2({
+            placeholder: 'Xona tanlang...',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: this.modal
+        });
+
+        $(this.teacherSelect).select2({
+            placeholder: 'O\'qituvchi tanlang...',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: this.modal
+        });
+
+        $(this.subjectSelect).select2({
+            placeholder: 'Fan tanlang...',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: this.modal
+        });
+
+        // Initialize select2 for additional groups
+        $(this.additionalGroupsSelect).select2({
+            placeholder: 'Guruhlarni tanlang...',
+            allowClear: true,
+            multiple: true,
+            width: '100%',
+            dropdownParent: this.modal
+        });
+
+        // Initialize tooltips
+        tippy('[data-tippy-content]', {
+            placement: 'top-start',
+            animation: 'scale',
+            theme: 'light'
+        });
+
         const daysOfWeekNumber = {
             'Dushanba': 1,
             'Seshanba': 2,
@@ -220,32 +295,110 @@ const ScheduleManager = {
         const dayNumber = daysOfWeekNumber[day];
         const courseId = this.courseSelect.value;
 
-        // Load available data for this time slot
-        await Promise.all([
-            this.loadAvailableTeachers(dayNumber, timeSlot),
-            this.loadAvailableRooms(dayNumber, timeSlot),
-            this.loadSubjects(courseId)
-        ]);
+        try {
+            // Load all necessary data
+            await Promise.all([
+                this.loadAvailableTeachers(dayNumber, timeSlot),
+                this.loadAvailableRooms(dayNumber, timeSlot),
+                this.loadSubjects(courseId),
+                this.loadGroups(courseId, groupId)
+            ]);
 
-        if (cellData) {
-            this.roomSelect.value = cellData.room.id;
-            this.teacherSelect.value = cellData.teacher.id;
-            this.subjectSelect.value = cellData.subject.id;
-            this.saveDataButton.style.display = 'none';
-            this.updateDataButton.style.display = 'block';
-        } else {
-            this.roomSelect.value = '';
-            this.teacherSelect.value = '';
-            this.subjectSelect.value = '';
-            this.saveDataButton.style.display = 'block';
-            this.updateDataButton.style.display = 'none';
+            if (cellData) {
+                this.roomSelect.value = cellData.room.id;
+                this.teacherSelect.value = cellData.teacher.id;
+                this.subjectSelect.value = cellData.subject.id;
+                this.saveDataButton.style.display = 'none';
+                this.updateDataButton.style.display = 'flex';
+                this.toggleGroupsButton.style.display = 'none';
+                this.groupSelectionContent.classList.remove('show');
+            } else {
+                this.roomSelect.value = '';
+                this.teacherSelect.value = '';
+                this.subjectSelect.value = '';
+                this.additionalGroupsSelect.value = [];
+                this.saveDataButton.style.display = 'flex';
+                this.updateDataButton.style.display = 'none';
+                this.toggleGroupsButton.style.display = 'block';
+            }
+
+            // Trigger select2 updates
+            $(this.roomSelect).trigger('change');
+            $(this.teacherSelect).trigger('change');
+            $(this.subjectSelect).trigger('change');
+            $(this.additionalGroupsSelect).trigger('change');
+
+            this.modal.classList.remove('hidden');
+            setTimeout(() => {
+                this.modal.classList.add('active');
+            }, 50);
+
+        } catch (error) {
+            this.showToast('Xatolik yuz berdi', 'error');
+        } finally {
+            this.setLoading(false);
         }
-
-        this.modal.classList.remove('hidden');
     },
 
     closeModal() {
-        this.modal.classList.add('hidden');
+        this.modal.classList.remove('active');
+        setTimeout(() => {
+            this.modal.classList.add('hidden');
+
+            // Reset group selection
+            this.groupSelectionContent.classList.remove('show');
+
+            // Destroy all select2 instances
+            $(this.roomSelect).select2('destroy');
+            $(this.teacherSelect).select2('destroy');
+            $(this.subjectSelect).select2('destroy');
+            $(this.additionalGroupsSelect).select2('destroy');
+        }, 300);
+    },
+
+    setLoading(loading) {
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+            button.disabled = loading;
+            if (loading) {
+                const originalContent = button.innerHTML;
+                button.setAttribute('data-original-content', originalContent);
+                button.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <span>Yuklanmoqda...</span>
+                `;
+            } else {
+                const originalContent = button.getAttribute('data-original-content');
+                if (originalContent) {
+                    button.innerHTML = originalContent;
+                }
+            }
+        });
+    },
+
+    showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    ${type === 'error' 
+                        ? '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd">'
+                        : '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd">'
+                    }
+                </svg>
+                ${message}
+            </div>
+        `;
+
+        document.getElementById('toastContainer').appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 100);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     },
 
     async saveData() {
@@ -257,25 +410,37 @@ const ScheduleManager = {
         const dayNumber = daysOfWeekNumber[day];
         const courseId = this.courseSelect.value;
 
-        const scheduleData = {
+        // Create base schedule data
+        const baseScheduleData = {
             course_id: parseInt(courseId),
             day: parseInt(dayNumber, 10),
             time_slot: parseInt(timeSlot),
-            group_id: parseInt(groupId, 10),
             room_id: parseInt(this.roomSelect.value, 10),
             teacher_id: parseInt(this.teacherSelect.value, 10),
             subject_id: parseInt(this.subjectSelect.value, 10),
         };
 
+        // Get selected additional groups
+        const additionalGroupIds = $(this.additionalGroupsSelect).val() || [];
+
+        // Create schedule data array including main group and additional groups
+        const scheduleDataArray = [
+            { ...baseScheduleData, group_id: parseInt(groupId, 10) },
+            ...additionalGroupIds.map(additionalGroupId => ({
+                ...baseScheduleData,
+                group_id: parseInt(additionalGroupId, 10)
+            }))
+        ];
+
         try {
             const response = await fetch('/api/schedule/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify([scheduleData]),
+                body: JSON.stringify(scheduleDataArray),
             });
 
             if (response.ok) {
-                alert('Dars jadvali muvaffaqiyatli saqlandi');
+                this.showToast('Dars jadvali muvaffaqiyatli saqlandi');
                 this.closeModal();
                 await this.handleCourseChange({ target: { value: courseId } });
             } else {
@@ -283,7 +448,7 @@ const ScheduleManager = {
             }
         } catch (error) {
             console.error('Xatolik:', error);
-            alert(error.message);
+            this.showToast(error.message, 'error');
         }
     },
 
@@ -322,7 +487,7 @@ const ScheduleManager = {
             });
 
             if (response.ok) {
-                alert('Dars jadvali muvaffaqiyatli yangilandi');
+                this.showToast('Dars jadvali muvaffaqiyatli yangilandi');
                 this.closeModal();
                 await this.handleCourseChange({ target: { value: courseId } });
             } else {
@@ -330,7 +495,7 @@ const ScheduleManager = {
             }
         } catch (error) {
             console.error('Xatolik:', error);
-            alert(error.message);
+            this.showToast(error.message, 'error');
         }
     },
 };
@@ -338,4 +503,3 @@ const ScheduleManager = {
 document.addEventListener('DOMContentLoaded', () => {
     ScheduleManager.init();
 });
-
