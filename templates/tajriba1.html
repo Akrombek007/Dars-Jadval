@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dars Jadvali - San'at asari</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Add modern select2 for better dropdowns -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-    <!-- Add tippy.js for tooltips -->
     <link href="https://unpkg.com/tippy.js@6/dist/tippy.css" rel="stylesheet"/>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
@@ -17,7 +15,6 @@
             background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
         }
 
-        /* Keep existing styles unchanged */
         .schedule-container {
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
@@ -40,13 +37,13 @@
             background: rgba(255, 255, 255, 0.4);
         }
 
-        /* Enhanced Modal Styles */
         .modal-backdrop {
-            backdrop-filter: blur(8px);
-            background: rgba(0, 0, 0, 0.4);
-            opacity: 0;
+            backdrop-filter: none; /* Xiralashtirishni o'chiradi */
+            background: transparent; /* Orqa fonni to'liq shaffof qiladi */
+            opacity: 0; /* Orqa qismini ko'rinmas qiladi */
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
 
         .modal-content {
             background: linear-gradient(145deg, #ffffff, #f3f4f6);
@@ -58,7 +55,7 @@
         }
 
         .modal.active .modal-backdrop {
-            opacity: 1;
+            opacity: 0;
         }
 
         .modal.active .modal-content {
@@ -66,7 +63,6 @@
             opacity: 1;
         }
 
-        /* Enhanced Select2 Styles */
         .select2-container {
             width: 100% !important;
             margin: 4px 0;
@@ -107,7 +103,6 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* Form Styles */
         .form-group {
             position: relative;
             margin-bottom: 1.5rem;
@@ -124,7 +119,6 @@
             transition: all 0.2s ease;
         }
 
-        /* Button Styles */
         .btn {
             position: relative;
             padding: 0.75rem 1.5rem;
@@ -180,7 +174,16 @@
             transform: translateY(-1px);
         }
 
-        /* Loading Spinner */
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
         .loading-spinner {
             width: 1.5rem;
             height: 1.5rem;
@@ -199,7 +202,6 @@
             }
         }
 
-        /* Toast Notifications */
         .toast-container {
             position: fixed;
             top: 1rem;
@@ -223,7 +225,6 @@
             opacity: 1;
         }
 
-        /* Tooltip Styles */
         .tippy-box {
             background-color: #374151;
             color: white;
@@ -270,100 +271,109 @@
 
 <!-- Modal -->
 <div id="modal" class="modal fixed inset-0 z-50 hidden">
-        <div class="modal-backdrop absolute inset-0"></div>
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="modal-content w-full max-w-md p-6 relative">
-                <!-- Modal Header -->
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-2">
-                        Dars Ma'lumotlarini Kiriting
-                    </h2>
-                    <p class="text-sm text-gray-500">
-                        Barcha maydonlarni to'ldiring
-                    </p>
+    <div class="modal-backdrop absolute inset-0"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-content w-full max-w-md p-6 relative">
+            <!-- Modal Header -->
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                    Dars Ma'lumotlarini Kiriting
+                </h2>
+                <p id="modalGroupName" class="text-sm text-gray-500">
+                    Barcha maydonlarni to'ldiring
+                </p>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="scheduleForm" class="space-y-6">
+                <input type="hidden" id="selectedCell">
+
+                <!-- Room Select -->
+                <div class="form-group">
+                    <select id="room" required
+                            class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
+                            data-tippy-content="Tanlangan vaqt uchun bo'sh xonalar">
+                        <option value="">Xona tanlang...</option>
+                    </select>
+                    <label for="room" class="text-sm font-medium text-indigo-600">Xona</label>
                 </div>
 
-                <!-- Modal Form -->
-                <form id="scheduleForm" class="space-y-6">
-                    <input type="hidden" id="selectedCell">
+                <!-- Teacher Select -->
+                <div class="form-group">
+                    <select id="teacher" required
+                            class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
+                            data-tippy-content="Tanlangan vaqt uchun bo'sh o'qituvchilar">
+                        <option value="">O'qituvchi tanlang...</option>
+                    </select>
+                    <label for="teacher" class="text-sm font-medium text-indigo-600">O'qituvchi</label>
+                </div>
 
-                    <!-- Room Select -->
-                    <div class="form-group">
-                        <select id="room" required
-                                class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
-                                data-tippy-content="Tanlangan vaqt uchun bo'sh xonalar">
-                            <option value="">Xona tanlang...</option>
-                        </select>
-                        <label for="room" class="text-sm font-medium text-indigo-600">Xona</label>
-                    </div>
+                <!-- Subject Select -->
+                <div class="form-group">
+                    <select id="subject" required
+                            class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
+                            data-tippy-content="Kurs uchun mavjud fanlar">
+                        <option value="">Fan tanlang...</option>
+                    </select>
+                    <label for="subject" class="text-sm font-medium text-indigo-600">Fan</label>
+                </div>
 
-                    <!-- Teacher Select -->
-                    <div class="form-group">
-                        <select id="teacher" required
-                                class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
-                                data-tippy-content="Tanlangan vaqt uchun bo'sh o'qituvchilar">
-                            <option value="">O'qituvchi tanlang...</option>
-                        </select>
-                        <label for="teacher" class="text-sm font-medium text-indigo-600">O'qituvchi</label>
-                    </div>
-
-                    <!-- Subject Select -->
-                    <div class="form-group">
-                        <select id="subject" required
-                                class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
-                                data-tippy-content="Kurs uchun mavjud fanlar">
-                            <option value="">Fan tanlang...</option>
-                        </select>
-                        <label for="subject" class="text-sm font-medium text-indigo-600">Fan</label>
-                    </div>
-
-                    <!-- New Group Selection Section -->
-                    <div class="group-selection p-4 border-2 border-gray-200 rounded-xl">
-                        <div class="group-selection-header">
-                            <span class="text-sm font-medium text-gray-700">Qo'shimcha guruhlar</span>
-                            <button type="button" id="toggleGroups" class="group-toggle-btn focus:outline-none">
+                <!-- New Group Selection Section -->
+                <div class="group-selection p-4 border-2 border-gray-200 rounded-xl">
+                    <div class="group-selection-header">
+                        <span class="text-sm font-medium text-gray-700">Qo'shimcha guruhlar</span>
+                        <button type="button" id="toggleGroups" class="group-toggle-btn focus:outline-none">
                                 <span class="flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                     </svg>
                                     Guruh qo'shish
                                 </span>
-                            </button>
-                        </div>
-                        <div id="groupSelectionContent" class="group-selection-content">
-                            <select id="additionalGroups" multiple class="w-full" data-tippy-content="Qo'shimcha guruhlarni tanlang">
-                                <!-- Groups will be populated by JavaScript -->
-                            </select>
-                        </div>
+                        </button>
                     </div>
+                    <div id="groupSelectionContent" class="group-selection-content">
+                        <select id="additionalGroups" multiple class="w-full"
+                                data-tippy-content="Qo'shimcha guruhlarni tanlang">
+                            <!-- Groups will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex justify-end gap-3 mt-8">
-                        <button type="button" id="saveData" class="btn btn-primary">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <span>Saqlash</span>
-                        </button>
-                        <button type="button" id="updateData" class="btn btn-success">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
-                            <span>O'zgartirish</span>
-                        </button>
-                        <button type="button" id="closeModal" class="btn btn-secondary">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                            <span>Yopish</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-3 mt-8">
+                    <button type="button" id="saveData" class="btn btn-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Saqlash</span>
+                    </button>
+                    <button type="button" id="updateData" class="btn btn-success">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>O'zgartirish</span>
+                    </button>
+                    <button type="button" id="deleteData" class="btn btn-danger">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <span>O'chirish</span>
+                    </button>
+                    <button type="button" id="closeModal" class="btn btn-secondary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        <span>Yopish</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
 <!-- Toast Container -->
 <div id="toastContainer" class="toast-container"></div>

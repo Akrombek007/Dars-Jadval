@@ -1,4 +1,14 @@
 const ScheduleManager = {
+    async loadGroupsForCourse(courseId) {
+        try {
+            const response = await fetch(`/api/schedule/${courseId}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error loading groups:', error);
+            this.showToast('Guruhlarni yuklashda xatolik', 'error');
+            return [];
+        }
+    },
     init() {
         this.courseSelect = document.getElementById('courseSelect');
         this.scheduleTableBody = document.getElementById('scheduleTableBody');
@@ -248,6 +258,9 @@ const ScheduleManager = {
         this.setLoading(true);
         this.selectedCell.value = `${day}-${timeSlot}-${groupId}`;
 
+        const courseId = this.courseSelect.value;
+        const groups = await this.loadGroupsForCourse(courseId);
+
         // Initialize select2 for all dropdowns
         $(this.roomSelect).select2({
             placeholder: 'Xona tanlang...',
@@ -296,6 +309,14 @@ const ScheduleManager = {
         };
         const dayNumber = daysOfWeekNumber[day];
         const courseId = this.courseSelect.value;
+
+        const modalGroupName = document.getElementById('modalGroupName');
+        const group = groups.find(g => g.id === parseInt(groupId));
+        if (group) {
+            modalGroupName.textContent = group.name;
+        } else {
+            modalGroupName.textContent = 'Barcha maydonlarni to\'ldiring';
+        }
 
         try {
             // Load all necessary data
@@ -546,4 +567,3 @@ const ScheduleManager = {
 document.addEventListener('DOMContentLoaded', () => {
     ScheduleManager.init();
 });
-

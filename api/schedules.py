@@ -66,9 +66,10 @@ async def get_available_rooms(day: int, time_slot: int, db: DatabaseCore = Depen
 @router.get("/schedule/subjects/{course_id}", response_model=List[dict])
 async def read_subjects(course_id: int, db: DatabaseCore = Depends(get_db_core)):
     try:
-        return [{"id": subject.id, "name": f"{subject.name} {subject.subject_type}", "subject_type": subject.subject_type,
-                 "course_name": subject.course_name}
-                for subject in await db.get(Subject, filters={"course_id": f"{course_id}"})]
+        return [
+            {"id": subject.id, "name": f"{subject.name} {subject.subject_type}", "subject_type": subject.subject_type,
+             "course_name": subject.course_name}
+            for subject in await db.get(Subject, filters={"course_id": f"{course_id}"})]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -83,7 +84,8 @@ async def get_schedule_table(course_id: int, db: DatabaseCore = Depends(get_db_c
                 "id": schedule.id,
                 "group": {"id": schedule.group_id, "name": schedule.group.name},
                 "course": {"id": schedule.course_id, "name": schedule.course.name},
-                "subject": {"id": schedule.subject_id, "name": f"{schedule.subject.name} {schedule.subject.subject_type}"},
+                "subject": {"id": schedule.subject_id,
+                            "name": f"{schedule.subject.name} {schedule.subject.subject_type}"},
                 "teacher": {"id": schedule.teacher_id, "name": schedule.teacher.name},
                 "room": {"id": schedule.room_id, "name": schedule.room.name},
                 "day": schedule.day,
@@ -155,3 +157,12 @@ async def update_schedule(
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Jadval yangilashda xatolik: {str(e)}")
+
+
+@router.delete("/schedule/{schedule_id}")
+async def delete_schedule(schedule_id: int, db: DatabaseCore = Depends(get_db_core)):
+    try:
+        await db.delete(Schedule, {"id": schedule_id})
+        return {"message": "Dars jadvali muvaffaqiyatli o'chirildi"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
