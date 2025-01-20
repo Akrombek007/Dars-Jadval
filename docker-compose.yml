@@ -2,62 +2,121 @@ version: '3.8'
 
 networks:
   app_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: app_bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.1.0/24
+          gateway: 192.168.1.1
+    enable_ipv6: true
+    attachable: true
 
 services:
-  #  telegram_bot:
-  #    image: telegram_bot
-  #    restart: always
-  #    depends_on:
-  #      - postgres
-  #    environment:
-  #      IP: localhost
-  #      ADMIN: 550676068
-  #      ADMINS: 765135326
-  #      ADMIN1: 1709066039
-  #      BOT_TOKEN: 1808395536:AAE8_x1cSHCXTvfQPmlIf3Q1GzRKjm4TTqI
-  #      DATABASE_URL: postgresql+psycopg2://MMTM_user:MMTM_password@postgres:5432/MMTM_kontrakt
-  #    networks:
-  #      - app_network
-  #    deploy:
-  #      resources:
-  #        limits:
-  #          cpus: "1"
-  #          memory: 500M
-  #        reservations:
-  #          cpus: "0.5"
-  #          memory: 300M
-  #    logging:
-  #      driver: "json-file"
-  #      options:
-  #        max-size: "10m"
-  #        max-file: "3"
-
   postgres:
     image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_USER: DJ_user
-      POSTGRES_PASSWORD: DJ_password
-      POSTGRES_DB: DJ_Database
+      POSTGRES_USER: DARS_user
+      POSTGRES_PASSWORD: DARS_password
+      POSTGRES_DB: DARS_database
+      # Yuqori unumdorlik va yuklama uchun optimallashtirilgan
+      POSTGRES_MAX_CONNECTIONS: 200
+      POSTGRES_SHARED_BUFFERS: 1GB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 3GB
+      POSTGRES_WORK_MEM: 16MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 256MB
+      POSTGRES_MAX_WAL_SIZE: 1GB
+      POSTGRES_MIN_WAL_SIZE: 80MB
+      POSTGRES_WAL_BUFFERS: 16MB
+      POSTGRES_RANDOM_PAGE_COST: 1.1
+      POSTGRES_EFFECTIVE_IO_CONCURRENCY: 200
     ports:
-      - "5439:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=1GB
+      -c effective_cache_size=3GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=256MB
+      -c max_wal_size=1GB
+      -c min_wal_size=80MB
+      -c wal_buffers=16MB
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c synchronous_commit=off
+      -c checkpoint_timeout=1h
+      -c max_wal_senders=8
+      -c max_replication_slots=8
+      -c wal_level=replica
+      -c hot_standby=on
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 192.168.1.2
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 2G
+          cpus: "4"
+          memory: 8G
         reservations:
-          cpus: "1"
-          memory: 1G
+          cpus: "2"
+          memory: 4G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DARS_user -d DARS_database"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "5"
+
+  pgbackups:
+    image: prodrigestivill/postgres-backup-local
+    restart: always
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_HOST=192.168.1.2
+      - POSTGRES_DB=DARS_database
+      - POSTGRES_USER=DARS_user
+      - POSTGRES_PASSWORD=DARS_password
+      - POSTGRES_EXTRA_OPTS=-Z9 --schema=public --blobs
+      - SCHEDULE=@hourly
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=8080
+    networks:
+      app_network:
+        ipv4_address: 192.168.1.3
+
+  fastapi_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: postgresql+asyncpg://DARS_user:DARS_password@192.168.1.2:5432/DARS_database
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+    networks:
+      app_network:
+        ipv4_address: 192.168.1.4
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   pgdata:
