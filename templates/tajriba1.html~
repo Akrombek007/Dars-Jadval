@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dars Jadvali - San'at asari</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <link href="https://unpkg.com/tippy.js@6/dist/tippy.css" rel="stylesheet"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+
+        .schedule-container {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .schedule-header {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .schedule-cell {
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .schedule-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .modal-backdrop {
+            backdrop-filter: none; /* Xiralashtirishni o'chiradi */
+            background: transparent; /* Orqa fonni to'liq shaffof qiladi */
+            opacity: 0; /* Orqa qismini ko'rinmas qiladi */
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+
+        .modal-content {
+            background: linear-gradient(145deg, #ffffff, #f3f4f6);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal.active .modal-backdrop {
+            opacity: 0;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .select2-container {
+            width: 100% !important;
+            margin: 4px 0;
+        }
+
+        .select2-container--default .select2-selection--single {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            height: 45px;
+            padding: 8px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .select2-container--default .select2-selection--single:hover {
+            border-color: #818cf8;
+        }
+
+        .select2-container--default .select2-selection--single:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 28px;
+            color: #374151;
+            padding-left: 4px;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #6366f1;
+        }
+
+        .select2-dropdown {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            position: absolute;
+            top: -0.75rem;
+            left: 0.75rem;
+            padding: 0 0.5rem;
+            background: white;
+            font-size: 0.875rem;
+            color: #6366f1;
+            transition: all 0.2s ease;
+        }
+
+        .btn {
+            position: relative;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .btn:hover::after {
+            transform: translateX(100%);
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .loading-spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+        }
+
+        .toast {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .tippy-box {
+            background-color: #374151;
+            color: white;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+
+        .tippy-arrow {
+            color: #374151;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-10 px-0">
+<header class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Dars Jadvali boshqaruvi</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="/" class="hover:underline">Asosiy sahifa</a></li>
+                    <li><a href="/courses" class="hover:underline">Kurslar</a></li>
+                    <li><a href="/subjects" class="hover:underline">Fanlar</a></li>
+                    <li><a href="/teachers" class="hover:underline">O'qituvchilar</a></li>
+                    <li><a href="/groups" class="hover:underline">Guruhlar</a></li>
+                    <li><a href="/rooms" class="hover:underline">Xonalar</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+<div class="w-full">
+    <div class="schedule-container p-6 mb-12">
+        <div class="mb-8">
+            <label for="courseSelect" class="block text-2xl font-semibold text-indigo-900 mb-4">
+                🎨 Kursni tanlang:
+            </label>
+            <select id="courseSelect"
+                    class="w-full md:w-2/3 p-3 rounded-lg bg-white bg-opacity-50 border border-indigo-300 text-indigo-900 placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+                <option value="" disabled selected>Kursni tanlang...</option>
+            </select>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                <tr class="schedule-header text-white">
+                    <!-- Header will be populated by JavaScript -->
+                </tr>
+                </thead>
+                <tbody id="scheduleTableBody" class="text-indigo-900">
+                <!-- Table body will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="modal-content w-full max-w-md p-6 relative">
+            <!-- Modal Header -->
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                    Dars Ma'lumotlarini Kiriting
+                </h2>
+                <p id="modalGroupName" class="text-sm text-gray-500">
+                    Barcha maydonlarni to'ldiring
+                </p>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="scheduleForm" class="space-y-6">
+                <input type="hidden" id="selectedCell">
+
+                <!-- Room Select -->
+                <div class="form-group">
+                    <select id="room" required
+                            class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
+                            data-tippy-content="Tanlangan vaqt uchun bo'sh xonalar">
+                        <option value="">Xona tanlang...</option>
+                    </select>
+                    <label for="room" class="text-sm font-medium text-indigo-600">Xona</label>
+                </div>
+
+                <!-- Teacher Select -->
+                <div class="form-group">
+                    <select id="teacher" required
+                            class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
+                            data-tippy-content="Tanlangan vaqt uchun bo'sh o'qituvchilar">
+                        <option value="">O'qituvchi tanlang...</option>
+                    </select>
+                    <label for="teacher" class="text-sm font-medium text-indigo-600">O'qituvchi</label>
+                </div>
+
+                <!-- Subject Select -->
+                <div class="form-group">
+                    <select id="subject" required
+                            class="w-full border-2 border-gray-200 rounded-xl py-3 px-4 bg-white bg-opacity-80"
+                            data-tippy-content="Kurs uchun mavjud fanlar">
+                        <option value="">Fan tanlang...</option>
+                    </select>
+                    <label for="subject" class="text-sm font-medium text-indigo-600">Fan</label>
+                </div>
+
+                <!-- New Group Selection Section -->
+                <div class="group-selection p-4 border-2 border-gray-200 rounded-xl">
+                    <div class="group-selection-header">
+                        <span class="text-sm font-medium text-gray-700">Qo'shimcha guruhlar</span>
+                        <button type="button" id="toggleGroups" class="group-toggle-btn focus:outline-none">
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    Guruh qo'shish
+                                </span>
+                        </button>
+                    </div>
+                    <div id="groupSelectionContent" class="group-selection-content">
+                        <select id="additionalGroups" multiple class="w-full"
+                                data-tippy-content="Qo'shimcha guruhlarni tanlang">
+                            <!-- Groups will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-3 mt-8">
+                    <button type="button" id="saveData" class="btn btn-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Saqlash</span>
+                    </button>
+                    <button type="button" id="updateData" class="btn btn-success">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>O'zgartirish</span>
+                    </button>
+                    <button type="button" id="deleteData" class="btn btn-danger">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <span>O'chirish</span>
+                    </button>
+                    <button type="button" id="closeModal" class="btn btn-secondary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        <span>Yopish</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script src="{{ url_for('static', path='/schedule.js') }}"></script>
+</body>
+</html>

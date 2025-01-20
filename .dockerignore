@@ -1,0 +1,22 @@
+# Ignore Python cache files
+*.pyc
+__pycache__/
+
+# Ignore virtual environments
+.venv/
+env/
+
+# Ignore logs and other temporary files
+*.log
+*.tmp
+*.bak
+
+# Ignore node_modules (if any)
+node_modules/
+
+# Ignore Docker Compose override files
+docker-compose.override.yml
+pgdata/
+backups/
+.idea/
+migrations/
